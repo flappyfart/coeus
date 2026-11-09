@@ -4,25 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Coeus</title>
+  <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="shell">
     <aside class="rail">
-      <p class="mark">COEUS</p>
-      <p class="ticker">$COEUS</p>
+      <div class="brand">
+        <img src="/mark.svg" alt="" width="28" height="28">
+        <div>
+          <p class="mark">COEUS</p>
+          <p class="ticker">$COEUS</p>
+        </div>
+      </div>
+      <p class="ver" id="ver">0.2.0</p>
       <nav aria-label="Sections">
         <button type="button" data-pane="plan" class="on">Plan</button>
         <button type="button" data-pane="models">Models</button>
         <button type="button" data-pane="account">Account</button>
       </nav>
-      <p class="rail-note">Keys stay on this computer.</p>
+      <div class="rail-foot">
+        <p class="rail-note">Keys stay on this computer.</p>
+        <button id="stop" type="button" class="stop">Stop</button>
+        <button id="arm" type="button" class="arm" hidden>Arm again</button>
+      </div>
     </aside>
     <div class="desk">
       <header class="desk-bar">
-        <p class="desk-title">Coeus</p>
+        <p class="desk-title">Sees both sides.</p>
+        <p id="paused" class="paused" hidden>Paused. New sends wait until you arm Coeus.</p>
         <label class="net">Orders
-          <select id="network">
+          <select id="network" aria-label="Order network">
             <option value="testnet">Testnet</option>
             <option value="mainnet">Mainnet</option>
           </select>
@@ -30,18 +42,45 @@
       </header>
 
       <section class="stage" data-panel="plan">
-        <p id="out" class="out">Tell Coeus the plan. It shows the trade before anything is sent.</p>
-        <div class="composer">
+        <div class="tape" id="tape">
+          <p class="kicker">North of the sky</p>
+          <h1>Say the plan.</h1>
+          <p id="empty" class="empty">Coeus shows the trade on this desk before anything is sent. Testnet is the default.</p>
+          <article id="receipt" class="receipt" hidden>
+            <p class="receipt-net" id="r-net"></p>
+            <p class="receipt-side" id="r-side"></p>
+            <p class="receipt-coin" id="r-coin"></p>
+            <dl class="receipt-grid">
+              <div><dt>Size</dt><dd id="r-size">—</dd></div>
+              <div><dt>Leverage</dt><dd id="r-lev">—</dd></div>
+              <div><dt>Stop</dt><dd id="r-stop">—</dd></div>
+              <div><dt>Take profit</dt><dd id="r-tp">—</dd></div>
+              <div><dt>Risk</dt><dd id="r-risk">—</dd></div>
+              <div><dt>Mark</dt><dd id="r-mark">—</dd></div>
+            </dl>
+            <div class="lists">
+              <div>
+                <p class="list-k">Rules that passed</p>
+                <ul id="r-rules"></ul>
+              </div>
+              <div>
+                <p class="list-k">Holding it</p>
+                <ul id="r-blocks"></ul>
+              </div>
+            </div>
+          </article>
+        </div>
+        <form class="composer" id="composer">
           <label class="sr" for="plan">Plan</label>
           <textarea id="plan" rows="3" placeholder="short ETH if funding turns negative and it loses 3,200. risk 1%. max 3x."></textarea>
           <div class="composer-row">
-            <label class="check"><input id="auto" type="checkbox"> Auto, with a second model checking the trade</label>
+            <label class="check"><input id="auto" type="checkbox"> Second model checks, then you still press Send</label>
             <div class="row">
               <button id="show" type="button">Show the trade</button>
               <button id="send" type="button" class="ghost" disabled>Send</button>
             </div>
           </div>
-        </div>
+        </form>
       </section>
 
       <section class="stage form" data-panel="models" hidden>
@@ -58,7 +97,8 @@
         <label>Base URL <input id="base" placeholder="https://your-server/v1"></label>
         <label>Model name <input id="model" placeholder="the model id"></label>
         <label>Model key <input id="model-key" type="password" autocomplete="off" placeholder="saved on this computer, not shown again"></label>
-        <p class="eyebrow">Second model, for auto mode</p>
+        <p class="eyebrow">Second model</p>
+        <p class="note">Used only when the box on Plan is checked. It can refuse the trade. It cannot skip Send.</p>
         <label>Check provider
           <select id="check-provider">
             <option value="">None</option>
@@ -79,15 +119,42 @@
 
       <section class="stage form" data-panel="account" hidden>
         <p class="eyebrow">Hyperliquid</p>
-        <p class="note">A separate API wallet does the trading. Your main wallet key is not a field here.</p>
+        <p class="note">A separate API wallet does the trading. Your main wallet key is not a field here. That API wallet can place and cancel orders. It cannot withdraw. Revoke it on Hyperliquid, under API, when you want it to stop.</p>
         <label>Account address <input id="account" placeholder="0x… the account, not the API wallet" autocomplete="off"></label>
         <label>API wallet key <input id="api-key" type="password" autocomplete="off" placeholder="saved on this computer"></label>
-        <p class="note">The orders switch is in the top bar. Save writes the model and the account together.</p>
+        <p class="note">The orders switch is in the top bar. Save writes the model and the account together. Keys live in ~/.coeus on this computer.</p>
         <div class="row"><button type="button" data-save-proxy>Save</button></div>
       </section>
     </div>
   </div>
-  <footer>Not financial advice. Leveraged trades can lose money. Hidden stops stay on this computer and only fire while Coeus is running.</footer>
+
+  <div id="stop-ask" class="sheet" hidden>
+    <form class="sheet-card">
+      <p class="kicker">Stop</p>
+      <h2>Pause sends and cancel open orders.</h2>
+      <p>This cancels working orders on the network in the top bar. It does not close a position, and it does not withdraw. Hidden stops will not fire until you arm Coeus again.</p>
+      <div class="row">
+        <button id="stop-yes" type="button">Stop now</button>
+        <button id="stop-no" type="button" class="ghost">Keep trading</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="gate" class="sheet" hidden>
+    <form class="sheet-card" id="gate-form">
+      <p class="kicker">Mainnet</p>
+      <h2>This order is real.</h2>
+      <p>Type MAINNET to send it. Testnet is the other choice in the top bar.</p>
+      <label class="sr" for="gate-word">Type MAINNET</label>
+      <input id="gate-word" autocomplete="off" spellcheck="false" placeholder="MAINNET">
+      <div class="row">
+        <button id="gate-send" type="submit">Send on mainnet</button>
+        <button id="gate-no" type="button" class="ghost">Back</button>
+      </div>
+    </form>
+  </div>
+
+  <footer>Not financial advice. Leveraged trades can lose money. A hidden stop fires only while this window is open.</footer>
   <script src="/app.js"></script>
 </body>
 </html>

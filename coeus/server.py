@@ -1,9 +1,11 @@
 import json
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from coeus import broker, engine, journal, pack, stops
+from coeus import __version__, broker, engine, journal, pack, stops
 from coeus.store import load, save_config, save_secrets
 
 WEB = Path(__file__).resolve().parent.parent / "web"
@@ -15,7 +17,9 @@ def _state():
     model = cfg.get("model") or {}
     return {
         "name": "Coeus",
+        "version": __version__,
         "ticker": "$COEUS",
+        "halted": bool(cfg.get("halted")),
         "network": cfg.get("network"),
         "account_set": bool((cfg.get("account_address") or "").strip()),
         "api_key_set": bool(secrets.get("api_wallet_key")),
@@ -57,14 +61,18 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/state":
             self._send(200, _state())
             return
-        if path in ("/", "/index.html"):
-            self._send(200, (WEB / "index.html").read_bytes(), "text/html; charset=utf-8")
-            return
-        if path == "/styles.css":
-            self._send(200, (WEB / "styles.css").read_bytes(), "text/css")
-            return
-        if path == "/app.js":
-            self._send(200, (WEB / "app.js").read_bytes(), "text/javascript")
+        rel = "index.html" if path in ("/", "") else path.lstrip("/")
+        target = (WEB / rel).resolve()
+        root = WEB.resolve()
+        if target.is_file() and (target == root or root in target.parents):
+            kind = {
+                ".html": "text/html; charset=utf-8",
+                ".css": "text/css",
+                ".js": "text/javascript",
+                ".svg": "image/svg+xml",
+                ".woff2": "font/woff2",
+            }.get(target.suffix, "application/octet-stream")
+            self._send(200, target.read_bytes(), kind)
             return
         self._send(404, {"error": "not found"})
 
@@ -83,8 +91,17 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(400, {"error": "Show a trade first."})
                     return
                 LAST["approved"] = True
+                LAST["mainnet_confirm"] = (data.get("confirm") or "").strip()
                 result = engine.commit(LAST)
+                LAST.clear()
                 self._send(200, {"ok": True, "result": json.loads(json.dumps(result, default=str))})
+                return
+            if path == "/api/halt":
+                LAST.clear()
+                self._send(200, engine.halt())
+                return
+            if path == "/api/arm":
+                self._send(200, engine.arm())
                 return
             if path == "/api/model":
                 cfg, secrets = load()
@@ -117,6 +134,18 @@ class Handler(BaseHTTPRequestHandler):
             self._send(400, {"error": str(exc)})
         except Exception as exc:
             self._send(400, {"error": str(exc)})
+
+
+def start_watch():
+    def loop():
+        while True:
+            try:
+                engine.watch_once()
+            except Exception:
+                pass
+            time.sleep(20)
+
+    threading.Thread(target=loop, name="coeus-stops", daemon=True).start()
 
 
 def serve(port=4371):

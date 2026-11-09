@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Tiresias">
+  <path d="M4 32 Q32 2 60 32 Q32 62 4 32 Z" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="32" cy="32" r="10" stroke="#FFFFFF" stroke-width="3"/>
+  <path d="M32 22 A10 10 0 0 0 32 42 Z" fill="#FFFFFF"/>
+</svg>

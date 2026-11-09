@@ -133,13 +133,27 @@ def propose(text, auto=False):
             )
             if not allowed:
                 reasons.append(why or "The second model said no.")
+    if cfg.get("halted"):
+        reasons.append("Sends are paused. Arm Coeus before a new order.")
+    trade["passed"] = guard.passed(trade, rules, equity or 0, journal.day_pnl())
     trade["blocked"] = reasons
     trade["ready"] = not reasons
     return trade
 
 
+def send_block(network, confirm, halted):
+    if halted:
+        return "Sends are paused. Press Arm to allow them again. Nothing was sent."
+    if (network or "testnet") == "mainnet" and confirm != "MAINNET":
+        return "Mainnet needs the word MAINNET. Nothing was sent."
+    return ""
+
+
 def commit(trade):
     cfg, secrets = load()
+    reason = send_block(cfg.get("network"), trade.get("mainnet_confirm"), cfg.get("halted"))
+    if reason:
+        raise broker.NotReady(reason)
     if trade.get("blocked"):
         raise broker.NotReady(" ".join(trade["blocked"]))
     if (cfg.get("guardrails") or {}).get("require_approval", True) and not trade.get("approved"):
@@ -151,14 +165,73 @@ def commit(trade):
     hidden = None
     if trade.get("stop") or trade.get("take_profit"):
         hidden = stops.add(trade)
+    lev = trade.get("leverage")
     lines = [
         f"{trade['side']} {trade['coin']}",
+        f"network: {cfg.get('network') or 'testnet'}",
         f"entry: {trade.get('entry')}",
         f"size: {trade.get('size')}",
+        f"leverage: {f'{lev:.2f}x' if isinstance(lev, (int, float)) else lev}",
         f"stop on this computer: {trade.get('stop')}",
         f"take profit on this computer: {trade.get('take_profit')}",
-        "The tight stop was not placed on the public order list.",
-        f"exchange: {result}",
+        f"risk percent: {trade.get('risk_pct')}",
+        "The stop was not placed on the public order list. It fires only while Coeus is open.",
     ]
+    for rule in trade.get("passed") or []:
+        lines.append(f"rule passed: {rule}")
+    lines.append(f"exchange: {result}")
     journal.add(trade["coin"], "\n".join(lines))
     return {"exchange": result, "hidden_stop": hidden}
+
+
+def halt():
+    from coeus.store import save_config
+    cfg, secrets = load()
+    cfg["halted"] = True
+    save_config(cfg)
+    try:
+        result = broker.cancel_open(cfg, secrets)
+        note = f"Cancelled {result.get('cancelled', 0)} open orders."
+    except broker.NotReady as exc:
+        result = {"cancelled": 0}
+        note = str(exc)
+    journal.add("Stop", f"Sends are paused. {note}")
+    return {"halted": True, "cancelled": result.get("cancelled", 0), "note": note}
+
+
+def arm():
+    from coeus.store import save_config
+    cfg, _secrets = load()
+    cfg["halted"] = False
+    save_config(cfg)
+    journal.add("Arm", "Sends are allowed again. Mainnet still needs the word MAINNET.")
+    return {"halted": False}
+
+
+def watch_once():
+    cfg, secrets = load()
+    if cfg.get("halted"):
+        return ["Sends are paused. Hidden stops are not firing."]
+    notes = []
+    for item in list(stops.all_stops()):
+        snap = market.snapshot(item["coin"])
+        mark = snap["mark"]
+        hit = None
+        if item.get("stop") and item["side"] == "long" and mark <= float(item["stop"]):
+            hit = "stop"
+        elif item.get("stop") and item["side"] == "short" and mark >= float(item["stop"]):
+            hit = "stop"
+        elif item.get("take_profit") and item["side"] == "long" and mark >= float(item["take_profit"]):
+            hit = "take profit"
+        elif item.get("take_profit") and item["side"] == "short" and mark <= float(item["take_profit"]):
+            hit = "take profit"
+        if not hit:
+            notes.append(f"{item['coin']} mark {mark:g} still waiting")
+            continue
+        result = broker.send_close(cfg, secrets, item["coin"], item.get("size"))
+        journal.add(item["coin"], f"Hidden {hit} reached at {mark}.\nexchange: {result}\npnl: 0")
+        stops.remove(item["id"])
+        notes.append(f"Closed {item['coin']} on a hidden {hit}.")
+    if not notes:
+        notes.append("No hidden stops.")
+    return notes

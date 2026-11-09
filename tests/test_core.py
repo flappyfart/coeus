@@ -25,6 +25,22 @@ class PlanTests(unittest.TestCase):
             plan.parse("buy the dip")
 
 
+class SendTests(unittest.TestCase):
+    def test_mainnet_needs_the_word(self):
+        from coeus.engine import send_block
+        self.assertIn("MAINNET", send_block("mainnet", "", False))
+        self.assertEqual(send_block("mainnet", "MAINNET", False), "")
+        self.assertEqual(send_block("testnet", "", False), "")
+        self.assertIn("paused", send_block("testnet", "", True))
+
+    def test_passed_rules_skip_a_blocked_market(self):
+        rules = {"max_leverage": 3, "max_position_usd": 5000, "daily_loss_stop_pct": 2, "allowed_markets": ["ETH"]}
+        trade = {"coin": "ETH", "side": "short", "leverage": 2, "notional": 1000}
+        lines = guard.passed(trade, rules, 1000, 0)
+        self.assertTrue(any("ETH" in line for line in lines))
+        self.assertTrue(any("Leverage" in line for line in lines))
+
+
 class GuardTests(unittest.TestCase):
     def test_blocks_leverage_and_market(self):
         rules = {"max_leverage": 3, "max_position_usd": 5000, "daily_loss_stop_pct": 2, "allowed_markets": ["ETH"]}

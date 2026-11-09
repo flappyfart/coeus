@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from coeus import broker, engine, journal, market, pack, stops
+from coeus import broker, engine, journal, market, pack
 from coeus.store import load
 
 
@@ -32,6 +32,7 @@ def main(argv=None):
     plan.add_argument("text")
     plan.add_argument("--send", action="store_true", help="Place the order after the checks pass")
     plan.add_argument("--auto", action="store_true", help="Also ask the second model")
+    plan.add_argument("--i-mean-mainnet", action="store_true", help="Required with --send when orders are set to mainnet")
 
     sub.add_parser("doctor", help="Check the market and the local setup")
     sub.add_parser("journal", help="Print the journal")
@@ -49,6 +50,8 @@ def main(argv=None):
         _print_trade(trade)
         if args.send:
             trade["approved"] = True
+            if args.i_mean_mainnet:
+                trade["mainnet_confirm"] = "MAINNET"
             try:
                 result = engine.commit(trade)
             except broker.NotReady as exc:
@@ -86,34 +89,10 @@ def main(argv=None):
 
 
 def _watch():
-    cfg, secrets = load()
-    items = stops.all_stops()
-    if not items:
-        print("No hidden stops.")
-        return 0
-    fired = 0
-    for item in list(items):
-        snap = market.snapshot(item["coin"])
-        mark = snap["mark"]
-        hit = None
-        if item.get("stop") and item["side"] == "long" and mark <= item["stop"]:
-            hit = "stop"
-        elif item.get("stop") and item["side"] == "short" and mark >= item["stop"]:
-            hit = "stop"
-        elif item.get("take_profit") and item["side"] == "long" and mark >= item["take_profit"]:
-            hit = "take profit"
-        elif item.get("take_profit") and item["side"] == "short" and mark <= item["take_profit"]:
-            hit = "take profit"
-        if not hit:
-            print(f"{item['coin']} mark {mark:g}  hidden {item.get('stop')} / {item.get('take_profit')}  still waiting")
-            continue
-        try:
-            result = broker.send_close(cfg, secrets, item["coin"], item.get("size"))
-        except broker.NotReady as exc:
-            print(exc)
-            return 1
-        journal.add(item["coin"], f"Hidden {hit} reached at {mark}.\nexchange: {result}\npnl: 0")
-        stops.remove(item["id"])
-        fired += 1
-        print(f"Closed {item['coin']} on a hidden {hit}.")
+    try:
+        for line in engine.watch_once():
+            print(line)
+    except broker.NotReady as exc:
+        print(exc)
+        return 1
     return 0

@@ -45,6 +45,11 @@ def candles(coin, interval, start_ms, network="mainnet"):
     }, network)
 
 
+def open_orders(address, network):
+    rows = info({"type": "openOrders", "user": address}, network)
+    return rows if isinstance(rows, list) else []
+
+
 def account(address, network):
     state = info({"type": "clearinghouseState", "user": address}, network)
     equity = float(state.get("marginSummary", {}).get("accountValue") or 0)

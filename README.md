@@ -36,8 +36,8 @@ Export writes `SYSTEM.md` and `tools.json` so you can load Coeus into that model
 ## Mac and Windows
 
 - Mac: `packaging/build_mac.sh` writes `dist/Coeus.app`.
-- Windows: on a Windows PC, run `packaging/windows/build.ps1`. That writes `dist\Coeus\Coeus.exe`.
+- Windows: on a Windows PC, run `packaging/windows/build.ps1`. That writes `dist\Coeus\Coeus.exe`. The site zip is built from that same script.
 
-Orders default to Hyperliquid testnet. Mainnet is a setting. Nothing is sent until you press Send and an API wallet key plus your account address are saved.
+Orders default to Hyperliquid testnet. Mainnet asks you to type MAINNET before a send. Stop pauses new sends and cancels open orders. Nothing is sent until you press Send and an API wallet key plus your account address are saved.
 
 Not financial advice. Leveraged trades can lose money. Hidden stops only fire while Coeus is running.

@@ -4,5 +4,12 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt pyinstaller
-.\.venv\Scripts\pyinstaller --noconfirm --windowed --name Coeus --add-data "web;web" --paths . desktop_entry.py
+.\.venv\Scripts\pyinstaller --noconfirm --windowed --name Coeus --add-data "web;web" --paths . `
+  --hidden-import eth_account `
+  --hidden-import hyperliquid.exchange `
+  --hidden-import hyperliquid.utils.signing `
+  --collect-submodules hyperliquid `
+  --collect-submodules eth_account `
+  --collect-submodules webview `
+  desktop_entry.py
 Write-Host "Built dist\Coeus\Coeus.exe"

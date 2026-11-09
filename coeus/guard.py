@@ -18,3 +18,23 @@ def check(trade, rules, equity, day_pnl):
     if trade.get("side") != "close" and not trade.get("stop") and trade.get("risk_pct"):
         reasons.append("A risk percent needs a stop, so the size can be worked out.")
     return reasons
+
+
+def passed(trade, rules, equity, day_pnl):
+    lines = []
+    markets = [m.upper() for m in rules.get("allowed_markets") or []]
+    coin = trade.get("coin")
+    if coin in markets:
+        lines.append(f"{coin} is an allowed market.")
+    lev = float(trade.get("leverage") or 0)
+    cap = float(rules.get("max_leverage") or 0)
+    if lev <= cap:
+        lines.append(f"Leverage is within the {cap:g}x cap.")
+    notional = float(trade.get("notional") or 0)
+    pos = float(rules.get("max_position_usd") or 0)
+    if notional <= pos:
+        lines.append("Size is within the position cap.")
+    limit = float(rules.get("daily_loss_stop_pct") or 0)
+    if not equity or day_pnl >= 0 or abs(day_pnl) / equity * 100 < limit:
+        lines.append("The daily loss stop is clear.")
+    return lines
