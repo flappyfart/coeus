@@ -1,8 +1,12 @@
-# Coeus
+![Coeus. Sees both sides.](docs/banner.png)
 
-A local app for Hyperliquid perpetual plans. The name is Coeus. The token ticker is $COEUS.
+A local app for Hyperliquid perpetual plans. The token ticker is $COEUS.
 
-It reads a plan in plain English, shows the trade, and sends it only after you approve. Tight stops stay on this computer. Guardrails are in code. You can point it at your own model, or export a pack and import Coeus into a model you already use.
+Tell it a plan in plain English. It shows the trade, and sends it only after you approve. Tight stops stay on this computer. Guardrails are in code. Point it at your own model, or export a pack and import Coeus into a model you already use.
+
+[itscoeus.com](https://itscoeus.com)
+
+![The Coeus desk. Example data, not a live trade.](docs/desk.png)
 
 ## Run
 
@@ -16,7 +20,7 @@ python3 -m venv .venv
 
 The window is http://127.0.0.1:4371
 
-Settings and the journal live in `~/.coeus/`. Keys are stored in `secrets.json` on this computer and are not printed back.
+Settings and the journal live in `~/.coeus/`. Keys are stored in `secrets.json` on that computer and are not printed back.
 
 ## Your model
 
@@ -32,7 +36,7 @@ Export writes `SYSTEM.md` and `tools.json` so you can load Coeus into that model
 ## Mac and Windows
 
 - Mac: `packaging/build_mac.sh` writes `dist/Coeus.app`.
-- Windows: on a Windows PC, run `packaging/windows/build.ps1`. That writes `dist\Coeus\Coeus.exe`. This Mac cannot build or launch that exe.
+- Windows: on a Windows PC, run `packaging/windows/build.ps1`. That writes `dist\Coeus\Coeus.exe`.
 
 Orders default to Hyperliquid testnet. Mainnet is a setting. Nothing is sent until you press Send and an API wallet key plus your account address are saved.
 
