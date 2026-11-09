@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coeus</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <p class="mark">COEUS</p>
+      <p class="ticker">$COEUS</p>
+      <nav aria-label="Sections">
+        <button type="button" data-pane="plan" class="on">Plan</button>
+        <button type="button" data-pane="models">Models</button>
+        <button type="button" data-pane="account">Account</button>
+      </nav>
+      <p class="rail-note">Keys stay on this computer.</p>
+    </aside>
+    <div class="desk">
+      <header class="desk-bar">
+        <p class="desk-title">Coeus</p>
+        <label class="net">Orders
+          <select id="network">
+            <option value="testnet">Testnet</option>
+            <option value="mainnet">Mainnet</option>
+          </select>
+        </label>
+      </header>
+
+      <section class="stage" data-panel="plan">
+        <p id="out" class="out">Tell Coeus the plan. It shows the trade before anything is sent.</p>
+        <div class="composer">
+          <label class="sr" for="plan">Plan</label>
+          <textarea id="plan" rows="3" placeholder="short ETH if funding turns negative and it loses 3,200. risk 1%. max 3x."></textarea>
+          <div class="composer-row">
+            <label class="check"><input id="auto" type="checkbox"> Auto, with a second model checking the trade</label>
+            <div class="row">
+              <button id="show" type="button">Show the trade</button>
+              <button id="send" type="button" class="ghost" disabled>Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage form" data-panel="models" hidden>
+        <p class="eyebrow">Your model</p>
+        <p class="note">Point Coeus at a model you already have, or export a pack and import that into the model. A local model never leaves this computer.</p>
+        <label>Provider
+          <select id="provider">
+            <option value="own">Your model (OpenAI-compatible)</option>
+            <option value="ollama">Ollama, on this computer</option>
+            <option value="claude">Claude</option>
+            <option value="spacexai">SpaceXAI</option>
+          </select>
+        </label>
+        <label>Base URL <input id="base" placeholder="https://your-server/v1"></label>
+        <label>Model name <input id="model" placeholder="the model id"></label>
+        <label>Model key <input id="model-key" type="password" autocomplete="off" placeholder="saved on this computer, not shown again"></label>
+        <p class="eyebrow">Second model, for auto mode</p>
+        <label>Check provider
+          <select id="check-provider">
+            <option value="">None</option>
+            <option value="own">Your model</option>
+            <option value="ollama">Ollama</option>
+            <option value="claude">Claude</option>
+            <option value="spacexai">SpaceXAI</option>
+          </select>
+        </label>
+        <label>Check base URL <input id="check-base"></label>
+        <label>Check model <input id="check-model"></label>
+        <div class="row">
+          <button id="save" type="button">Save</button>
+          <button id="export" type="button" class="ghost">Export for my model</button>
+        </div>
+        <p id="setup" class="note"></p>
+      </section>
+
+      <section class="stage form" data-panel="account" hidden>
+        <p class="eyebrow">Hyperliquid</p>
+        <p class="note">A separate API wallet does the trading. Your main wallet key is not a field here.</p>
+        <label>Account address <input id="account" placeholder="0x… the account, not the API wallet" autocomplete="off"></label>
+        <label>API wallet key <input id="api-key" type="password" autocomplete="off" placeholder="saved on this computer"></label>
+        <p class="note">The orders switch is in the top bar. Save writes the model and the account together.</p>
+        <div class="row"><button type="button" data-save-proxy>Save</button></div>
+      </section>
+    </div>
+  </div>
+  <footer>Not financial advice. Leveraged trades can lose money. Hidden stops stay on this computer and only fire while Coeus is running.</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

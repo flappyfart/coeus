@@ -1,0 +1,4 @@
+hyperliquid-python-sdk
+openai
+pywebview
+pillow

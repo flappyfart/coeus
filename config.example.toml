@@ -1,0 +1,23 @@
+# Coeus. The token ticker is $COEUS. Nothing here is a promise about price.
+network = "testnet"          # testnet or mainnet. Orders use this. Market reads use mainnet.
+account_address = ""         # your Hyperliquid account address, not the API wallet address
+
+[guardrails]
+max_leverage = 3
+max_position_usd = 5000
+daily_loss_stop_pct = 2.0
+allowed_markets = ["BTC", "ETH", "SOL", "HYPE"]
+require_approval = true
+
+[model]
+# spacexai uses XAI_API_KEY and https://api.x.ai/v1
+# own: any OpenAI-compatible server. Set base_url, model, and COEUS_MODEL_KEY.
+# ollama: a model running on this computer.
+# claude: set model to the id from your Anthropic account, and ANTHROPIC_API_KEY.
+provider = "own"
+base_url = ""
+model = ""
+# Second model for auto mode. Auto mode will not send a trade until this is set.
+check_provider = ""
+check_base_url = ""
+check_model = ""

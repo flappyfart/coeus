@@ -1,0 +1,10 @@
+.venv/
+dist/
+build/
+*.spec
+__pycache__/
+.pytest_cache/
+*.pyc
+.DS_Store
+secrets.json
+config.toml
