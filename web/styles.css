@@ -120,7 +120,7 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--blue); bord
 textarea { resize: vertical; min-height: 74px; }
 .composer-row, .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .composer-row { margin-top: 12px; }
-.check { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+.check { display: flex; gap: 8px; align-items: center; flex: 1; color: var(--muted); font-size: 13px; white-space: nowrap; }
 .row { justify-content: flex-start; }
 button {
   background: var(--blue);
@@ -172,6 +172,7 @@ footer {
   .rail { border-right: 0; border-bottom: 1px solid var(--line); }
   .rail nav { flex-direction: row; }
   .rail-foot { margin-top: 12px; }
+  .check { white-space: normal; }
   .receipt-grid, .lists, .composer-row { grid-template-columns: 1fr; display: grid; }
   .composer-row .row { justify-content: flex-start; }
 }
